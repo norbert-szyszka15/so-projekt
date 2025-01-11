@@ -1,9 +1,7 @@
-#pragma once
-
 #include <helpers.h>
 
 void *checkIn(void *arg) {    
-    
+
 }
 
 void *securityCheck(void *arg) {

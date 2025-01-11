@@ -1,3 +1,5 @@
+#pragma once
+
 void *checkIn(void *arg);
 
 void *securityCheck(void *arg);

@@ -1,7 +1,12 @@
-#include <commons.h>
+#include "commons.h"
+
 #include <stdio.h>
+#include <unistd.h>
+
 int main() {
-   // printf() displays the string inside quotation
-   printf("Hello, World!");
+   while (1) {
+      sleep(10);
+      printf("Dispatcher: Announcing boarding readiness for plane %d.", planes[currentPlane].planeID);
+   }
    return 0;
 }

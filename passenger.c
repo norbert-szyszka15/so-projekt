@@ -50,6 +50,36 @@ void *passengerThread(void *arg) {
 }
 
 int main() {
-   printf("Hello, World!\n");
+   srand(time(NULL));
+
+   pthread_t passengers[MAX_PAX_ON_TERMINAL];
+   int ids[MAX_PAX_ON_TERMINAL];
+   
+   sem_init(&securityControl, 0, 6);
+    sem_init(&boardingGate, 0, GATES_CAPACITY);
+    pthread_mutex_init(&boardingGateLock, NULL);
+    pthread_mutex_init(&securityControlLock, NULL);
+
+    for (int i = 0; i < MAX_NUM_OF_PLANES; i++) {
+        planes[i].planeID = i + 1;
+        planes[i].maxBaggageWeight = MAX_BAGGAGE_WEIGHT + i * 2;
+        planes[i].maxCapacity = MAX_AIRCRAFT_CAPACITY;
+    }
+
+    for (int i = 0; i < MAX_PAX_ON_TERMINAL; i++) {
+        ids[i] = i + 1;
+        pthread_create(&passengers[i], NULL, passengerThread, &ids[i]);
+        sleep(rand() % 2);
+    }
+
+    for (int i = 0; i < MAX_PAX_ON_TERMINAL; i++) {
+        pthread_join(passengers[i], NULL);
+    }
+
+    sem_destroy(&securityControl);
+    sem_destroy(&boardingGate);
+    pthread_mutex_destroy(&boardingGateLock);
+    pthread_mutex_destroy(&securityControlLock);
+
    return 0;
 }

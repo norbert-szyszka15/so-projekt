@@ -5,3 +5,6 @@
 bin/aircraftCaptain
 bin/dispatcher
 bin/passenger
+
+# ingoring object files
+src/commons.o

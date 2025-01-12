@@ -10,7 +10,7 @@ PASSENGER_SRC = passenger.c
 CAPTAIN_SRC = aircraftCaptain.c
 DISPATCHER_SRC = dispatcher.c
 
-COMMON_OBJ = $(COMMON_SRC:.c=.o)
+COMMON_OBJ = $(SRC_DIR)/commons.o
 
 # Pliki wynikowe
 PASSENGER_BIN = $(BIN_DIR)/passenger
@@ -32,4 +32,5 @@ $(DISPATCHER_BIN): $(COMMON_OBJ) $(DISPATCHER_SRC)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(DISPATCHER_SRC) $(COMMON_OBJ) -o $@
 
 clean:
-	rm -f $(COMMON_OBJ) $(PASSENGER_BIN) $(CAPTAIN_BIN) $(DISPATCHER_BIN)
+	-rm $(SRC_DIR)/commons.o
+	-rm $(BIN_DIR)/*

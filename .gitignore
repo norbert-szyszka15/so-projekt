@@ -2,6 +2,6 @@
 .vscode/
 
 # ignoring binaries
-bin/aircraftCaptaing
+bin/aircraftCaptain
 bin/dispatcher
 bin/passenger

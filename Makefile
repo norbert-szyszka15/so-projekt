@@ -2,21 +2,20 @@ CXX       := g++
 CXX_FLAGS := -std=c++17 -ggdb
 
 BIN     := bin
-SRC     := src
+SRC     := .
 INCLUDE := include
 
 LIBRARIES   :=
-EXECUTABLE  := main
+EXECUTABLES := aircraftCaptain passenger dispatcher
 
-
-all: $(BIN)/$(EXECUTABLE)
+all: $(addprefix $(BIN)/, $(EXECUTABLES))
 
 run: clean all
 	clear
-	./$(BIN)/$(EXECUTABLE)
+	@for exec in $(EXECUTABLES); do ./$(BIN)/$$exec; done
 
-$(BIN)/$(EXECUTABLE): $(SRC)/*.c main.c
+$(BIN)/%: $(SRC)/%.c
 	$(CXX) $(CXX_FLAGS) -I$(INCLUDE) $^ -o $@ $(LIBRARIES)
 
 clean:
-	-rm $(BIN)/*
+	-rm -f $(BIN)/*

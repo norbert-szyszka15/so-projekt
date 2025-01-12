@@ -1,1 +1,7 @@
+# ignoring .vscode/ directory
 .vscode/
+
+# ignoring binaries
+bin/aircraftCaptaing
+bin/dispatcher
+bin/passenger

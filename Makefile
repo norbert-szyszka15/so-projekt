@@ -1,21 +1,35 @@
-CXX       := g++
-CXX_FLAGS := -std=c++17 -ggdb
+CC = g++
+CFLAGS = -std=c++17 -ggdb -Iinclude -pthread
+LDFLAGS = -pthread
+SRC_DIR = src
+BIN_DIR = bin
 
-BIN     := bin
-SRC     := .
-INCLUDE := include
+# Nazwy plików źródłowych
+COMMON_SRC = $(SRC_DIR)/commons.c
+PASSENGER_SRC = passenger.c
+CAPTAIN_SRC = aircraftCaptain.c
+DISPATCHER_SRC = dispatcher.c
 
-LIBRARIES   :=
-EXECUTABLES := aircraftCaptain passenger dispatcher
+COMMON_OBJ = $(COMMON_SRC:.c=.o)
 
-all: $(addprefix $(BIN)/, $(EXECUTABLES))
+# Pliki wynikowe
+PASSENGER_BIN = $(BIN_DIR)/passenger
+CAPTAIN_BIN = $(BIN_DIR)/aircraftCaptain
+DISPATCHER_BIN = $(BIN_DIR)/dispatcher
 
-run: clean all
-	clear
-	@for exec in $(EXECUTABLES); do ./$(BIN)/$$exec; done
+all: $(PASSENGER_BIN) $(CAPTAIN_BIN) $(DISPATCHER_BIN)
 
-$(BIN)/%: $(SRC)/%.c
-	$(CXX) $(CXX_FLAGS) -I$(INCLUDE) $^ -o $@ $(LIBRARIES)
+$(COMMON_OBJ): $(COMMON_SRC)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(PASSENGER_BIN): $(COMMON_OBJ) $(PASSENGER_SRC)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(PASSENGER_SRC) $(COMMON_OBJ) -o $@
+
+$(CAPTAIN_BIN): $(COMMON_OBJ) $(CAPTAIN_SRC)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(CAPTAIN_SRC) $(COMMON_OBJ) -o $@
+
+$(DISPATCHER_BIN): $(COMMON_OBJ) $(DISPATCHER_SRC)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(DISPATCHER_SRC) $(COMMON_OBJ) -o $@
 
 clean:
-	-rm -f $(BIN)/*
+	rm -f $(COMMON_OBJ) $(PASSENGER_BIN) $(CAPTAIN_BIN) $(DISPATCHER_BIN)

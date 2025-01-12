@@ -16,8 +16,8 @@
 typedef struct {
     long messageType;
     int passengerID;
-    int baggageWeight;
     int isVIP;
+    int baggageWeight;
     char gender;
 } passengerMessage;
 
@@ -33,7 +33,7 @@ extern pthread_mutex_t securityControlLock;
 extern sem_t boardingGate;
 extern pthread_mutex_t boardingGateLock;
 
-extern Plane plane[MAX_NUM_OF_PLANES];
+extern Plane planes[MAX_NUM_OF_PLANES];
 
 extern int currentPlane;
-extern int currentPassenger;
+extern int currentPassengers;

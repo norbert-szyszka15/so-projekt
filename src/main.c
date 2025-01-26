@@ -91,6 +91,7 @@ void initialize_resources() {
     for (int i = 0; i < MAX_SLOTS; i++) {
         sharedData->currentGender[i] = -1; // Stanowisko puste
     }
+    initialize_queue(&sharedData->queue);
 
     // Tworzenie semaforów
     semID = semget(KEY_SEMAPHORE, MAX_SLOTS + 2, IPC_CREAT | 0666);
@@ -105,6 +106,12 @@ void initialize_resources() {
             perror("semctl");
             exit(1);
         }
+    }
+
+    // Inicjalizacja semafora dla kolejki
+    if (semctl(semID, MAX_SLOTS + 1, SETVAL, 1) == -1) {
+        perror("semctl (kolejka)");
+        exit(1);
     }
 
     // Inicjalizacja semaforów dla schodów i samolotu

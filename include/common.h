@@ -1,6 +1,8 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include "utilities.h"
+
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
@@ -25,6 +27,7 @@ typedef struct {
     int passengersInPlane;
     bool terminateSimulation;
     int currentGender[MAX_SLOTS]; // -1: puste, 0: mężczyźni, 1: kobiety
+    Queue queue; // kolejka pasażerów FIFO
 } SharedData;
 
 // Prototypy operacji semaforowych

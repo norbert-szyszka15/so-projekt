@@ -31,7 +31,57 @@ void passenger_process(int shmID, int semID, int passengerID) {
         return; // Koniec procesu odrzuconego pasażera
     }
 
+    // Wejście do kolejki między odprawą bagażową a kontrolą bezpieczeństwa
+    // Zaimplementowane przy pomocy kolejki FIFO
+    semaphore_wait(semID, MAX_SLOTS + 1); // Dostęp do kolejki
+    enqueue(&sharedData->queue, passengerID);
+    semaphore_signal(semID, MAX_SLOTS + 1);
+    printf("Pasażer %d: dodany do kolejki.\n", passengerID);
+
+    // Czekanie w kolejce na swoją kolej
+    int inQueue = 1; // flaga, czy pasażer jest w kolejce
+    while (inQueue) {
+        semaphore_wait(semID, MAX_SLOTS + 1); // Dostęp do kolejki
+        int front_id = sharedData->queue.elements[sharedData->queue.front];
+        printf("Pasażer %d sprawdza kolejkę. Front kolejki: %d.\n", passengerID, front_id);
+
+        if (front_id == passengerID) {
+            // Jeśli to kolej tego pasażera, to opuszcza kolejkę
+            dequeue(&sharedData->queue);
+            printf("Pasażer %d opuszcza kolejkę.\n", passengerID);
+            inQueue = 0;
+
+            int slot = passengerID % MAX_SLOTS; // Przydział stanowiska
+            int success = 0;
+            while (!success) {
+                semaphore_wait(semID, slot); // Próba zajęcia stanowiska
+                success = check_gender_and_set(sharedData->currentGender, slot, gender);
+                // Opóźnienie po zajęciu stanowiska w celu przetestowania kolejki
+                // usleep(100000);
+                if (!success) {
+                    semaphore_signal(semID, slot); // Zwolnienie semafora
+                    usleep(10000);
+                }
+            }
+            printf("Pasażer %d: przeszedł kontrolę bezpieczeństwa na stanowisku %d.\n", passengerID, slot);
+            sleep(1); // Czas kontroli
+            semaphore_signal(semID, slot); // Zwolnienie semafora
+    
+
+            // Reset płci na stanowisku, jeżeli jest ono wolne
+            if (semctl(semID, slot, GETVAL) == 2) { // 2 = stanowisko puste
+                reset_gender(sharedData->currentGender, slot);
+            }
+        }
+
+        semaphore_signal(semID, MAX_SLOTS + 1);
+        if (inQueue) {
+            usleep(10000); // Czekanie 10 ms, jeśli jest kolej kogoś innego
+        }
+    }
+
     // Kontrola bezpieczeństwa
+    /*
     int slot = passengerID % MAX_SLOTS; // Przydział stanowiska
     int success = 0;
     while (!success) {
@@ -45,11 +95,13 @@ void passenger_process(int shmID, int semID, int passengerID) {
     printf("Pasażer %d: przeszedł kontrolę bezpieczeństwa na stanowisku %d.\n", passengerID, slot);
     sleep(1); // Czas kontroli
     semaphore_signal(semID, slot); // Zwolnienie semafora
+    
 
     // Reset płci na stanowisku, jeżeli jest ono wolne
     if (semctl(semID, slot, GETVAL) == 2) { // 2 = stanowisko puste
         reset_gender(sharedData->currentGender, slot);
     }
+    */
 
     /*
     printf("Pasażer %d: czeka na kontrolę bezpieczeństwa na stanowisku %d.\n", passengerID, slot);

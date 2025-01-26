@@ -1,53 +1,26 @@
-#pragma once
+#ifndef COMMON_H
+#define COMMON_H
 
 #include <pthread.h>
 #include <semaphore.h>
-#include <sys/ipc.h>
-#include <sys/msg.h>
-#include <sys/shm.h>
+#include <stdbool.h>
 
-#define MAX_PAX_ON_TERMINAL 500
-#define MAX_AIRCRAFT_CAPACITY 50
-#define MAX_BAGGAGE_WEIGHT 10
-#define MAX_VIP_PASSENGERS 5
-#define MAX_QUEUE_PASS_PER_PAX 3
-#define GATES_CAPACITY 10
-#define MAX_NUM_OF_PLANES 5
+// Stałe konfuguracyjne dla symulacji
+#define MAX_PASSENGERS 100
+#define MAX_VIP_PASSENERS 10
+#define MAX_WEIGHT 20
+#define MAX_SLOTS 3
+#define MAX_STAIR_CAPACITY 5
 
-#define SHM_KEY 1234
+// Semafory do synchhronizacji procesów
+extern sem_t controlStations[MAX_SLOTS];
+extern sem_t stairs;
+extern sem_t planeSeats;
+extern volatile bool terminateSimulation;
 
-typedef struct {
-    long messageType;
-    int passengerID;
-    int isVIP;
-    int baggageWeight;
-    char gender;
-} PassengerMessage;
+// Prototypy funkcji globalnych
+void initialize_sync();
+void cleanup_sync();
+void singal_handler(int sig);
 
-typedef struct {
-    int planeID;
-    int maxBaggageWeight;
-    int maxCapacity;
-} Plane;
-
-typedef struct {
-    sem_t securityControl;
-    pthread_mutex_t securityControlLock;
-
-    sem_t boardingGate;
-    pthread_mutex_t boardingGateLock;
-
-    Plane planes[MAX_NUM_OF_PLANES];
-
-    volatile int currentPlane;
-    volatile int currentPassengers;    
-
-    volatile int signalTakeoff;
-    volatile int signalStop;
-} SharedData;
-
-extern int shmId;
-extern SharedData *sharedData;
-
-void initializeSharedMemory();
-void cleanupSharedMemory();
+#endif

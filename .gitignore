@@ -2,9 +2,12 @@
 .vscode/
 
 # ignoring binaries
-bin/aircraftCaptain
-bin/dispatcher
-bin/passenger
+bin/airplane_simulation
 
 # ingoring object files
-src/commons.o
+src/captain.o
+src/common.o
+src/dispatcher.o
+src/main.o
+src/passenger.o
+src/utilities.o

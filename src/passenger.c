@@ -1,50 +1,42 @@
-/* passenger.c */
 #include "common.h"
+#include "passenger.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <time.h>
-#include <stdbool.h>    
 
-void *passengerThread(void *arg) {
-   
+void* passenger_routine(void* arg) {
+    Passenger* p = (Passenger*)arg;
+
+    if (p->bagageWeight > MAX_WEIGHT) {
+        printf("Pasażer %d odrzucony (waga bagażu).\n", p->id);
+        return NULL;
+    }
+
+    for (int i = 0; i < MAX_SLOTS; i++) {
+        if (sem_trywait(&controlStations[i]) == 0) {
+            printf("Pasażer %d kontrolowany na stanowisku %d.\n", p->id, i + 1);
+            sleep(1);
+            sem_post(&controlStations[i]);
+            break;
+        }
+    }
+
+    sem_wait(&stairs);
+    printf("Pasażer %d wchodzi na pokład.\n", p->id);
+    sem_post(&stairs);
+
+    sem_wait(&planeSeats);
+    printf("Pasażer %d zajął miejsce w samolocie.\n", p->id);
+
+    return NULL;
 }
 
-
-int main() {
-    srand(time(NULL));
-
-    // Przyłączenie do pamięci współdzielonej
-    shmId = shmget(IPC_PRIVATE, sizeof(SharedData), 0666);
-    if (shmId < 0) {
-        perror("shmget failed");
-        exit(1);
-    }
-
-    sharedData = (SharedData *)shmat(shmId, NULL, 0);
-    if (sharedData == (void *)-1) {
-        perror("shmat failed");
-        exit(1);
-    }
-
-    pthread_t passengers[MAX_PAX_ON_TERMINAL];
-    int ids[MAX_PAX_ON_TERMINAL];
-
-    for (int i = 0; i < MAX_PAX_ON_TERMINAL; i++) {
-        ids[i] = i + 1;
-        pthread_create(&passengers[i], NULL, passengerThread, &ids[i]);
-        sleep(rand() % 2);
-    }
-
-    for (int i = 0; i < MAX_PAX_ON_TERMINAL; i++) {
-        pthread_join(passengers[i], NULL);
-    }
-
-    // Odłączenie od pamięci współdzielonej
-    if (shmdt(sharedData) == -1) {
-        perror("shmdt failed");
-    }
-
-    return 0;
+Passenger* create_passenger(int id) {
+    Passenger* p = (Passenger*)malloc(sizeof(Passenger));
+    p->id = id;
+    p->bagageWeight = rand() % (MAX_WEIGHT + 10);
+    p->isVip = (id <= MAX_VIP_PASSENERS);
+    p->gender = (id % 2 == 0) ? 'M' : 'F';
+    return p;
 }

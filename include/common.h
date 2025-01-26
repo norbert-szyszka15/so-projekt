@@ -24,10 +24,13 @@ typedef struct {
     int passengersOnStairs;
     int passengersInPlane;
     bool terminateSimulation;
+    int currentGender[MAX_SLOTS]; // -1: puste, 0: mężczyźni, 1: kobiety
 } SharedData;
 
 // Prototypy operacji semaforowych
 void semaphore_wait(int semID, int semNum);
 void semaphore_signal(int semID, int semNum);
+int check_gender_and_set(int* currentGender, int slot, int gender);
+void reset_gender(int* currentGender, int slot);
 
 #endif

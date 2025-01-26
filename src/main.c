@@ -88,6 +88,9 @@ void initialize_resources() {
     sharedData->passengersOnStairs = 0;
     sharedData->passengersInPlane = 0;
     sharedData->terminateSimulation = false;
+    for (int i = 0; i < MAX_SLOTS; i++) {
+        sharedData->currentGender[i] = -1; // Stanowisko puste
+    }
 
     // Tworzenie semaforów
     semID = semget(KEY_SEMAPHORE, MAX_SLOTS + 2, IPC_CREAT | 0666);
@@ -96,12 +99,23 @@ void initialize_resources() {
         exit(1);
     }
 
-    // Inicjalizacja semaforów
+    // Inicjalizacja semaforów dla stanowisk (MAX_SLOTS = 3)
     for (int i = 0; i < MAX_SLOTS; i++) {
-        semctl(semID, i, SETVAL, 2); // 2 miejsca na stanowisku kontroli
+        if (semctl(semID, i, SETVAL, 2) == -1) { // Maks. 2 osoby na stanowisku
+            perror("semctl");
+            exit(1);
+        }
     }
-    semctl(semID, MAX_SLOTS, SETVAL, MAX_STAIR_CAPACITY); // Schody
-    semctl(semID, MAX_SLOTS + 1, SETVAL, MAX_PASSENGERS); // Samolot
+
+    // Inicjalizacja semaforów dla schodów i samolotu
+    if (semctl(semID, MAX_SLOTS, SETVAL, MAX_STAIR_CAPACITY) == -1) {
+        perror("semctl");
+        exit(1);
+    }
+    if (semctl(semID, MAX_SLOTS + 1, SETVAL, MAX_PASSENGERS) == -1) {
+        perror("semctl");
+        exit(1);
+    }
 }
 
 void cleanup_resources(int shmID, SharedData* sharedDataArg, int semID) {

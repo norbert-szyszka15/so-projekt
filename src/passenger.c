@@ -8,8 +8,6 @@
 #include <stdlib.h>
 
 void passenger_process(int shmID, int semID, int passengerID) {
-    int weight = generate_random_weight();
-
     SharedData* sharedData = (SharedData*)shmat(shmID, NULL, 0);
     if (sharedData == (void*)-1) {
         perror("shmat");
@@ -17,7 +15,14 @@ void passenger_process(int shmID, int semID, int passengerID) {
     }
 
     printf("Pasażer %d: rozpoczyna proces odprawy.\n", passengerID);
+
+    // Generowanie wagi bagażu
+    int weight = generate_random_weight();
     printf("Pasażer %d: waga bagażu wynosi %d kg.\n", passengerID, weight);
+
+    // Generowanie płci
+    int gender = generate_random_gender(); // 0 - mężczyzna, 1 - kobieta
+    printf("Pasażer %d: płeć - %s.\n", passengerID, gender == 0 ? "mężczyzna" : "kobieta");
 
     // Symulacja odprawy
     int isVip = (passengerID % 2 == 0); // VIP co drugi pasażer
@@ -27,11 +32,32 @@ void passenger_process(int shmID, int semID, int passengerID) {
     }
 
     // Kontrola bezpieczeństwa
-    printf("Pasażer %d: czeka na kontrolę bezpieczeństwa.\n", passengerID);
-    semaphore_wait(semID, passengerID % MAX_SLOTS); // Przypisanie do stanowiska
-    printf("Pasażer %d: przeszedł kontrolę na stanowisku %d.\n", passengerID, passengerID % MAX_SLOTS);
+    int slot = passengerID % MAX_SLOTS; // Przydział stanowiska
+    int success = 0;
+    while (!success) {
+        semaphore_wait(semID, slot); // Próba zajęcia stanowiska
+        success = check_gender_and_set(sharedData->currentGender, slot, gender);
+        if (!success) {
+            semaphore_signal(semID, slot); // Zwolnienie semafora
+            usleep(10000);
+        }
+    }
+    printf("Pasażer %d: przeszedł kontrolę bezpieczeństwa na stanowisku %d.\n", passengerID, slot);
     sleep(1); // Czas kontroli
-    semaphore_signal(semID, passengerID % MAX_SLOTS);
+    semaphore_signal(semID, slot); // Zwolnienie semafora
+
+    // Reset płci na stanowisku, jeżeli jest ono wolne
+    if (semctl(semID, slot, GETVAL) == 2) { // 2 = stanowisko puste
+        reset_gender(sharedData->currentGender, slot);
+    }
+
+    /*
+    printf("Pasażer %d: czeka na kontrolę bezpieczeństwa na stanowisku %d.\n", passengerID, slot);
+    semaphore_wait(semID, slot); // Przydział stanowiska (zajęcie semafora)
+    printf("Pasażer %d: przeszedł kontrolę bezpieczeństwa na stanowisku %d.\n", passengerID, slot);
+    sleep(1); // Czas kontroli
+    semaphore_signal(semID, slot); // Zwolnienie semafora
+    */
 
     // Wejście na schody
     printf("Pasażer %d: wchodzi na schody.\n", passengerID);

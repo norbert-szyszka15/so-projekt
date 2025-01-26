@@ -8,6 +8,7 @@
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <signal.h>
 
@@ -16,7 +17,7 @@ SharedData* sharedData;
 
 void signal_handler(int sig);
 void initialize_resources();
-void cleanup_resources();
+void cleanup_resources(int shmID, SharedData* sharedDataArg, int semID);
 
 int main() {
     // Obsługa sygnałów
@@ -54,7 +55,7 @@ int main() {
     }
 
     // Czyszczenie zasobów
-    cleanup_resources();
+    cleanup_resources(shmID, sharedData, semID);
 
     printf("Symulacja zakończona.\n");
     return 0;
@@ -64,7 +65,7 @@ void signal_handler(int sig) {
     if (sig == SIGINT) {
         printf("Zakończenie symulacji z powodu sygnału.\n");
         sharedData->terminateSimulation = true; // Ustawienie flagi w pamięci współdzielonej
-        cleanup_resources();
+        cleanup_resources(shmID, sharedData, semID);
         exit(0);
     }
 }
@@ -103,12 +104,23 @@ void initialize_resources() {
     semctl(semID, MAX_SLOTS + 1, SETVAL, MAX_PASSENGERS); // Samolot
 }
 
-void cleanup_resources() {
-    shmdt(sharedData); // Odłączenie pamięci współdzielonej
+void cleanup_resources(int shmID, SharedData* sharedDataArg, int semID) {
+    // Odłączenie pamięci współdzielonej
+    shmdt(sharedDataArg);
+
+    // Poczekaj na zakończenie wszystkich procesów
+    int status;
+    while (wait(&status) > 0);
+
+    // Usuń pamięć współdzieloną i semafory
     if (shmctl(shmID, IPC_RMID, NULL) == -1) {
         perror("shmctl");
+    } else {
+        printf("Pamięć współdzielona usunięta\n");
     }
-    if (semctl(semID, 0, IPC_RMID) == -1) { // Usunięcie semaforów
+    if (semctl(semID, 0, IPC_RMID) == -1) {
         perror("semctl");
+    } else {
+        printf("Semafory usunięte\n");
     }
 }

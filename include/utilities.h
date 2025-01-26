@@ -4,5 +4,6 @@
 #include <stdio.h>
 
 void log_message(const char* format, ...);
+int generate_random_weight();
 
 #endif

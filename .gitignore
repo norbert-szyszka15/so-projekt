@@ -5,9 +5,9 @@
 bin/airplane_simulation
 
 # ingoring object files
-src/captain.o
-src/common.o
-src/dispatcher.o
-src/main.o
-src/passenger.o
-src/utilities.o
+build/captain.o
+build/common.o
+build/dispatcher.o
+build/main.o
+build/passenger.o
+build/utilities.o

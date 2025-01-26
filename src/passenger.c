@@ -4,39 +4,41 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdlib.h>
 
-void* passenger_routine(void* arg) {
-    Passenger* p = (Passenger*)arg;
-
-    if (p->bagageWeight > MAX_WEIGHT) {
-        printf("Pasażer %d odrzucony (waga bagażu).\n", p->id);
-        return NULL;
+void passenger_process(int shmID, int semID, int passengerID) {
+    SharedData* sharedData = (SharedData*)shmat(shmID, NULL, 0);
+    if (sharedData == (void*)-1) {
+        perror("shmat");
+        exit(1);
     }
 
-    for (int i = 0; i < MAX_SLOTS; i++) {
-        if (sem_trywait(&controlStations[i]) == 0) {
-            printf("Pasażer %d kontrolowany na stanowisku %d.\n", p->id, i + 1);
-            sleep(1);
-            sem_post(&controlStations[i]);
-            break;
-        }
+    // Symulacja odprawy
+    if (rand() % 2 == 0) { // Symulacja losowej wagi bagażu
+        printf("Pasażer %d: bagaż przekracza limit, odrzucony.\n", passengerID);
+        shmdt(sharedData);
+        return;
     }
 
-    sem_wait(&stairs);
-    printf("Pasażer %d wchodzi na pokład.\n", p->id);
-    sem_post(&stairs);
+    printf("Pasażer %d: czeka na kontrolę bezpieczeństwa.\n", passengerID);
 
-    sem_wait(&planeSeats);
-    printf("Pasażer %d zajął miejsce w samolocie.\n", p->id);
+    // Kontrola bezpieczeństwa
+    semaphore_wait(semID, passengerID % MAX_SLOTS); // Przypisanie do stanowiska
+    printf("Pasażer %d: przeszedł kontrolę na stanowisku %d.\n", passengerID, passengerID % MAX_SLOTS);
+    sleep(1); // Czas kontroli
+    semaphore_signal(semID, passengerID % MAX_SLOTS);
 
-    return NULL;
-}
+    // Wejście na schody
+    semaphore_wait(semID, MAX_SLOTS);
+    printf("Pasażer %d: wchodzi na schody.\n", passengerID);
+    sleep(1); // Symulacja wchodzenia po schodach
+    semaphore_signal(semID, MAX_SLOTS);
 
-Passenger* create_passenger(int id) {
-    Passenger* p = (Passenger*)malloc(sizeof(Passenger));
-    p->id = id;
-    p->bagageWeight = rand() % (MAX_WEIGHT + 10);
-    p->isVip = (id <= MAX_VIP_PASSENERS);
-    p->gender = (id % 2 == 0) ? 'M' : 'F';
-    return p;
+    // Wejście na pokład
+    semaphore_wait(semID, MAX_SLOTS + 1);
+    printf("Pasażer %d: zajmuje miejsce w samolocie.\n", passengerID);
+
+    // Aktualizacja danych współdzielonych
+    sharedData->passengersInPlane++;
+    shmdt(sharedData);
 }

@@ -1,26 +1,33 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include <pthread.h>
-#include <semaphore.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
+#include <sys/shm.h>
 #include <stdbool.h>
+
+// Klucze IPC
+#define KEY_SEMAPHORE 0x1234
+#define KEY_SHARED_MEM 0x5678
 
 // Stałe konfuguracyjne dla symulacji
 #define MAX_PASSENGERS 100
-#define MAX_VIP_PASSENERS 10
+#define MAX_VIP_PASSENGERS 10
 #define MAX_WEIGHT 20
 #define MAX_SLOTS 3
 #define MAX_STAIR_CAPACITY 5
 
-// Semafory do synchhronizacji procesów
-extern sem_t controlStations[MAX_SLOTS];
-extern sem_t stairs;
-extern sem_t planeSeats;
-extern volatile bool terminateSimulation;
+// Struktura daych pamięci współdzielonej
+typedef struct {
+    int passengersInQueue;
+    int passengersOnStairs;
+    int passengersInPlane;
+    bool terminateSimulation;
+} SharedData;
 
-// Prototypy funkcji globalnych
-void initialize_sync();
-void cleanup_sync();
-void singal_handler(int sig);
+// Prototypy operacji semaforowych
+void semaphore_wait(int semID, int semNum);
+void semaphore_signal(int semID, int semNum);
 
 #endif

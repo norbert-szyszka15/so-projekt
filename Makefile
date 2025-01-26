@@ -30,7 +30,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 
 # Reguła czyszczenia plików tymczasowych
 clean:
-	rm -rf $(BUILD_DIR) $(TARGET)
+	rm -rf $(BUILD_DIR)/{captain.o,common.o,dispatcher.o,main.o,passenger.o,utilities.o}  $(TARGET)
 
 # Reguła uruchamiania programu
 run: $(TARGET)

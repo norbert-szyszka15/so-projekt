@@ -2,32 +2,36 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
+#include <sys/sem.h>
 
-sem_t controlStations[MAX_SLOTS];
-sem_t stairs;
-sem_t planeSeats;
-volatile bool terminateSimulation = false;
-
-void initialize_sync() {
-    for (int i = 0; i < MAX_SLOTS; i++) {
-        sem_init(&controlStations[i], 0, 2); // 2 osoby na stanowisko
+// Operacja czekania na semaforze
+void semaphore_wait(int semID, int semNum) {
+    if (semNum < 0 || semNum >= MAX_SLOTS + 2) { // Sprawdzenie zakresu indeksu
+        fprintf(stderr, "semaphore_wait: Invalid semNum %d\n", semNum);
+        exit(1);
     }
-    sem_init(&stairs, 0, MAX_STAIR_CAPACITY);
-    sem_init(&planeSeats, 0, MAX_PASSENGERS);
+
+    struct sembuf operation = {(unsigned short)semNum, -1, 0};
+    if (semop(semID, &operation, 1) == -1) {
+        perror("semaphore_wait");
+        exit(1);
+    }
+
+    printf("semaphore_wait: Done waiting on semNum %d\n", semNum);
 }
 
-void cleanup_sync() {
-    for (int i = 0; i < MAX_SLOTS; i++) {
-        sem_destroy(&controlStations[i]);
+// Operacja sygnału na semaforze
+void semaphore_signal(int semID, int semNum) {
+    if (semNum < 0 || semNum >= MAX_SLOTS + 2) { // Sprawdzenie zakresu indeksu
+        fprintf(stderr, "semaphore_signal: Invalid semNum %d\n", semNum);
+        exit(1);
     }
-    sem_destroy(&stairs);
-    sem_destroy(&planeSeats);
-}
 
-void signal_handler(int sig) {
-    if (sig == SIGINT) {
-        printf("Zakończenie symulacji...\n");
-        terminateSimulation = true;
+    struct sembuf operation = {(unsigned short)semNum, 1, 0};
+    if (semop(semID, &operation, 1) == -1) {
+        perror("semaphore_signal");
+        exit(1);
     }
+
+    printf("semaphore_signal: Done signaling on semNum %d\n", semNum);
 }

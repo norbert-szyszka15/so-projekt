@@ -1,5 +1,4 @@
 # so-projekt
----
 
 ### Uruchamianie programów
 ---

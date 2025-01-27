@@ -4,8 +4,9 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <semaphore.h>
 
-void captain_process(int shmID, int semID) {
+void captain_process(int shmID, sem_t* semaphores) {
     SharedData* sharedData = (SharedData*)shmat(shmID, NULL, 0);
     if (sharedData == (void*)-1) {
         perror("shmat");

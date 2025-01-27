@@ -1,5 +1,8 @@
 #ifndef DISPATCHER_H
 #define DISPATCHER_H
 
-void dispatcher_process(int shmID, int semID);
+#include <semaphore.h>
+
+void dispatcher_process(int shmID, sem_t* semaphores);
+
 #endif

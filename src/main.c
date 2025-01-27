@@ -6,18 +6,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/ipc.h>
-#include <sys/sem.h>
 #include <sys/shm.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <signal.h>
+#include <semaphore.h>
 
-int shmID, semID;
+int shmID;
 SharedData* sharedData;
+sem_t semaphores[MAX_SLOTS + 2];
 
 void signal_handler(int sig);
 void initialize_resources();
-void cleanup_resources(int shmID, SharedData* sharedDataArg, int semID);
+void cleanup_resources(int shmID, SharedData* sharedDataArg);
 
 int main() {
     // Obsługa sygnałów
@@ -30,22 +31,24 @@ int main() {
     for (int i = 0; i < MAX_PASSENGERS; i++) {
         pid_t pid = fork();
         if (pid == 0) {
-            passenger_process(shmID, semID, i + 1);
+            passenger_process(shmID, semaphores, i + 1);
             exit(0);
         }
+        // Add a small delay between creating passenger processes
+        usleep(100000); // 100 ms
     }
 
     // Tworzenie procesu dla kapitana
     pid_t captainPid = fork();
     if (captainPid == 0) {
-        captain_process(shmID, semID);
+        captain_process(shmID, semaphores);
         exit(0);
     }
 
     // Tworzenie procesu dla dyspozytora
     pid_t dispatcherPid = fork();
     if (dispatcherPid == 0) {
-        dispatcher_process(shmID, semID);
+        dispatcher_process(shmID, semaphores);
         exit(0);
     }
 
@@ -55,7 +58,7 @@ int main() {
     }
 
     // Czyszczenie zasobów
-    cleanup_resources(shmID, sharedData, semID);
+    cleanup_resources(shmID, sharedData);
 
     printf("Symulacja zakończona.\n");
     return 0;
@@ -65,7 +68,7 @@ void signal_handler(int sig) {
     if (sig == SIGINT) {
         printf("Zakończenie symulacji z powodu sygnału.\n");
         sharedData->terminateSimulation = true; // Ustawienie flagi w pamięci współdzielonej
-        cleanup_resources(shmID, sharedData, semID);
+        cleanup_resources(shmID, sharedData);
         exit(0);
     }
 }
@@ -91,41 +94,34 @@ void initialize_resources() {
     for (int i = 0; i < MAX_SLOTS; i++) {
         sharedData->currentGender[i] = -1; // Stanowisko puste
     }
-    initialize_queue(&sharedData->queue);
+    TAILQ_INIT(&sharedData->queue);
 
-    // Tworzenie semaforów
-    semID = semget(KEY_SEMAPHORE, MAX_SLOTS + 2, IPC_CREAT | 0666);
-    if (semID == -1) {
-        perror("semget");
-        exit(1);
-    }
-
-    // Inicjalizacja semaforów dla stanowisk (MAX_SLOTS = 3)
+    // Inicjalizacja semaforów
     for (int i = 0; i < MAX_SLOTS; i++) {
-        if (semctl(semID, i, SETVAL, 2) == -1) { // Maks. 2 osoby na stanowisku
-            perror("semctl");
+        if (sem_init(&semaphores[i], 1, 2) == -1) { // Maks. 2 osoby na stanowisku
+            perror("sem_init");
             exit(1);
         }
     }
 
     // Inicjalizacja semafora dla kolejki
-    if (semctl(semID, MAX_SLOTS + 1, SETVAL, 1) == -1) {
-        perror("semctl (kolejka)");
+    if (sem_init(&semaphores[MAX_SLOTS + 1], 1, 1) == -1) {
+        perror("sem_init (kolejka)");
         exit(1);
     }
 
     // Inicjalizacja semaforów dla schodów i samolotu
-    if (semctl(semID, MAX_SLOTS, SETVAL, MAX_STAIR_CAPACITY) == -1) {
-        perror("semctl");
+    if (sem_init(&semaphores[MAX_SLOTS], 1, MAX_STAIR_CAPACITY) == -1) {
+        perror("sem_init");
         exit(1);
     }
-    if (semctl(semID, MAX_SLOTS + 1, SETVAL, MAX_PASSENGERS) == -1) {
-        perror("semctl");
+    if (sem_init(&semaphores[MAX_SLOTS + 1], 1, MAX_PASSENGERS) == -1) {
+        perror("sem_init");
         exit(1);
     }
 }
 
-void cleanup_resources(int shmID, SharedData* sharedDataArg, int semID) {
+void cleanup_resources(int shmID, SharedData* sharedDataArg) {
     // Odłączenie pamięci współdzielonej
     shmdt(sharedDataArg);
 
@@ -133,15 +129,17 @@ void cleanup_resources(int shmID, SharedData* sharedDataArg, int semID) {
     int status;
     while (wait(&status) > 0);
 
-    // Usuń pamięć współdzieloną i semafory
+    // Usuń pamięć współdzieloną
     if (shmctl(shmID, IPC_RMID, NULL) == -1) {
         perror("shmctl");
     } else {
         printf("Pamięć współdzielona usunięta\n");
     }
-    if (semctl(semID, 0, IPC_RMID) == -1) {
-        perror("semctl");
-    } else {
-        printf("Semafory usunięte\n");
+
+    // Zniszczenie semaforów
+    for (int i = 0; i < MAX_SLOTS + 2; i++) {
+        if (sem_destroy(&semaphores[i]) == -1) {
+            perror("sem_destroy");
+        }
     }
 }

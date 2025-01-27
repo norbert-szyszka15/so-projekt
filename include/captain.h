@@ -1,6 +1,8 @@
 #ifndef CAPTAIN_H
 #define CAPTAIN_H
 
-void captain_process(int shmID, int semID);
+#include <semaphore.h>
+
+void captain_process(int shmID, sem_t* semaphores);
 
 #endif

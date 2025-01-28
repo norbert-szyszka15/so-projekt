@@ -39,7 +39,19 @@ void passenger_process(int shmID, sem_t* semaphores, int passengerID) {
         exit(1);
     }
     new_entry->passengerID = passengerID;
+    new_entry->frustrationLevel = 0; // Początkowy poziom frustracji
+
     if (isVip) {
+        struct passenger_entry *first_entry = TAILQ_FIRST(&sharedData->queue);
+        if (first_entry != NULL) {
+            first_entry->frustrationLevel++;
+            printf("Pasażer %d: poziom frustracji zwiększony do %d.\n", first_entry->passengerID, first_entry->frustrationLevel);
+            if (first_entry->frustrationLevel >= 3) {
+                printf("Pasażer %d: poziom frustracji osiągnął maksimum. Opuścił lotnisko.\n", first_entry->passengerID);
+                TAILQ_REMOVE(&sharedData->queue, first_entry, entries);
+                free(first_entry);
+            }
+        }
         TAILQ_INSERT_HEAD(&sharedData->queue, new_entry, entries); // VIPs go to the front
     } else {
         TAILQ_INSERT_TAIL(&sharedData->queue, new_entry, entries);

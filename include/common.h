@@ -23,6 +23,7 @@
 // Struktura dla elementów kolejki
 struct passenger_entry {
     int passengerID;
+    int frustrationLevel; // Poziom frustracji pasażera
     TAILQ_ENTRY(passenger_entry) entries;
 };
 

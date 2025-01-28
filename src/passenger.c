@@ -1,6 +1,5 @@
 #include "common.h"
 #include "passenger.h"
-#include "utilities.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,16 +32,20 @@ void passenger_process(int shmID, sem_t* semaphores, int passengerID) {
 
     // Wejście do kolejki między odprawą bagażową a kontrolą bezpieczeństwa
     // Zaimplementowane przy pomocy kolejki FIFO
-    sem_wait(&semaphores[MAX_SLOTS + 1]); // Dostęp do kolejki
+    sem_wait(&semaphores[MAX_SLOTS]); // Dostęp do kolejki
     struct passenger_entry *new_entry = (struct passenger_entry *)malloc(sizeof(struct passenger_entry));
     if (new_entry == NULL) {
         perror("malloc");
         exit(1);
     }
     new_entry->passengerID = passengerID;
-    TAILQ_INSERT_TAIL(&sharedData->queue, new_entry, entries);
+    if (isVip) {
+        TAILQ_INSERT_HEAD(&sharedData->queue, new_entry, entries); // VIPs go to the front
+    } else {
+        TAILQ_INSERT_TAIL(&sharedData->queue, new_entry, entries);
+    }
     printf("Pasażer %d: dodany do kolejki.\n", passengerID);
-    sem_post(&semaphores[MAX_SLOTS + 1]);
+    sem_post(&semaphores[MAX_SLOTS]);
 
     // Introduce a delay to allow multiple passengers to enter the queue
     sleep(2);
@@ -50,62 +53,41 @@ void passenger_process(int shmID, sem_t* semaphores, int passengerID) {
     // Czekanie w kolejce na swoją kolej
     int inQueue = 1; // flaga, czy pasażer jest w kolejce
     while (inQueue) {
-        sem_wait(&semaphores[MAX_SLOTS + 1]); // Dostęp do kolejki
-        struct passenger_entry *front_entry = TAILQ_FIRST(&sharedData->queue);
-        if (front_entry == NULL) {
-            printf("Pasażer %d: kolejka jest pusta!\n", passengerID);
-            sem_post(&semaphores[MAX_SLOTS + 1]);
-            break;
-        }
-        printf("Pasażer %d sprawdza kolejkę. Front kolejki: %d.\n", passengerID, front_entry->passengerID);
-
-        if (front_entry->passengerID == passengerID) {
-            // Jeśli to kolej tego pasażera, to opuszcza kolejkę
-            TAILQ_REMOVE(&sharedData->queue, front_entry, entries);
-            free(front_entry);
-            printf("Pasażer %d opuszcza kolejkę.\n", passengerID);
-            inQueue = 0;
-
-            int slot = passengerID % MAX_SLOTS; // Przydział stanowiska
-            int success = 0;
-            while (!success) {
-                sem_wait(&semaphores[slot]); // Próba zajęcia stanowiska
-                success = check_gender_and_set(sharedData->currentGender, slot, gender);
-                if (!success) {
-                    sem_post(&semaphores[slot]); // Zwolnienie semafora
-                    usleep(10000);
+        sem_wait(&semaphores[MAX_SLOTS]); // Dostęp do kolejki
+        struct passenger_entry *entry;
+        TAILQ_FOREACH(entry, &sharedData->queue, entries) {
+            if (entry->passengerID == passengerID) {
+                // Pasażer jest na początku kolejki
+                if (TAILQ_FIRST(&sharedData->queue) == entry) {
+                    TAILQ_REMOVE(&sharedData->queue, entry, entries);
+                    free(entry);
+                    inQueue = 0;
+                    break;
                 }
             }
-            printf("Pasażer %d: przeszedł kontrolę bezpieczeństwa na stanowisku %d.\n", passengerID, slot);
-            sleep(1); // Czas kontroli
-            sem_post(&semaphores[slot]); // Zwolnienie semafora
-
-            // Reset płci na stanowisku, jeżeli jest ono wolne
-            int sval;
-            sem_getvalue(&semaphores[slot], &sval);
-            if (sval == 2) { // 2 = stanowisko puste
-                reset_gender(sharedData->currentGender, slot);
-            }
         }
-
-        sem_post(&semaphores[MAX_SLOTS + 1]);
+        sem_post(&semaphores[MAX_SLOTS]);
         if (inQueue) {
-            sleep(1); // Symulacja czasu spędzonego w kolejce
+            sleep(1); // Czekanie na swoją kolej
         }
     }
 
-    // Wejście na schody
-    printf("Pasażer %d: wchodzi na schody.\n", passengerID);
-    sem_wait(&semaphores[MAX_SLOTS]);
-    sleep(1); // Symulacja wchodzenia po schodach
-    sem_post(&semaphores[MAX_SLOTS]);
+    // Wait for stairs capacity
+    sem_wait(&sharedData->stairsSemaphore);
+    sharedData->passengersOnStairs++;
+    printf("Pasażer %d: wchodzi na schody. Liczba pasażerów na schodach: %d\n", passengerID, sharedData->passengersOnStairs);
 
-    // Wejście na pokład
-    sem_wait(&semaphores[MAX_SLOTS + 1]);
-    printf("Pasażer %d: zajmuje miejsce w samolocie.\n", passengerID);
+    // Simulate time on stairs
+    sleep(1);
 
-    // Aktualizacja danych współdzielonych
+    // Enter the plane
+    sharedData->passengersOnStairs--;
     sharedData->passengersInPlane++;
+    printf("Pasażer %d: wchodzi do samolotu. Liczba pasażerów w samolocie: %d\n", passengerID, sharedData->passengersInPlane);
+
+    // Release stairs capacity
+    sem_post(&sharedData->stairsSemaphore);
+
     shmdt(sharedData);
 }
 

@@ -17,6 +17,15 @@ void dispatcher_process(int shmID, sem_t* semaphores) {
         sleep(10);
         printf("Dyspozytor: sygnał dla wcześniejszego odlotu samolotu.\n");
         sharedData->terminateSimulation = true;
+
+        // Resetowanie symulacji
+        sharedData->passengersInQueue = 0;
+        sharedData->passengersOnStairs = 0;
+        sharedData->passengersInPlane = 0;
+        for (int i = 0; i < MAX_SLOTS; i++) {
+            sharedData->currentGender[i] = -1;
+        }
+        TAILQ_INIT(&sharedData->queue);
     }
 
     shmdt(sharedData);

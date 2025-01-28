@@ -28,6 +28,14 @@ void captain_process(int shmID, sem_t* semaphores) {
 
             // Resetowanie liczby pasażerów na pokładzie
             sharedData->passengersInPlane = 0;
+
+            // Resetowanie symulacji
+            sharedData->passengersInQueue = 0;
+            sharedData->passengersOnStairs = 0;
+            for (int i = 0; i < MAX_SLOTS; i++) {
+                sharedData->currentGender[i] = -1;
+            }
+            TAILQ_INIT(&sharedData->queue);
         } else {
             printf("Kapitan: brak pasażerów na pokładzie, odlot odroczony.\n");
         }

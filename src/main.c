@@ -14,7 +14,7 @@
 
 int shmID;
 SharedData* sharedData;
-sem_t semaphores[MAX_SLOTS + 2];
+sem_t semaphores[MAX_SLOTS + 1];
 
 void signal_handler(int sig);
 void initialize_resources();
@@ -103,20 +103,14 @@ void initialize_resources() {
             exit(1);
         }
     }
+    if (sem_init(&sharedData->stairsSemaphore, 1, MAX_STAIRS_CAPACITY) == -1) {
+        perror("sem_init");
+        exit(1);
+    }
 
     // Inicjalizacja semafora dla kolejki
-    if (sem_init(&semaphores[MAX_SLOTS + 1], 1, 1) == -1) {
+    if (sem_init(&semaphores[MAX_SLOTS], 1, 1) == -1) {
         perror("sem_init (kolejka)");
-        exit(1);
-    }
-
-    // Inicjalizacja semaforów dla schodów i samolotu
-    if (sem_init(&semaphores[MAX_SLOTS], 1, MAX_STAIR_CAPACITY) == -1) {
-        perror("sem_init");
-        exit(1);
-    }
-    if (sem_init(&semaphores[MAX_SLOTS + 1], 1, MAX_PASSENGERS) == -1) {
-        perror("sem_init");
         exit(1);
     }
 }
@@ -137,9 +131,12 @@ void cleanup_resources(int shmID, SharedData* sharedDataArg) {
     }
 
     // Zniszczenie semaforów
-    for (int i = 0; i < MAX_SLOTS + 2; i++) {
+    for (int i = 0; i < MAX_SLOTS + 1; i++) {
         if (sem_destroy(&semaphores[i]) == -1) {
             perror("sem_destroy");
         }
+    }
+    if (sem_destroy(&sharedDataArg->stairsSemaphore) == -1) {
+        perror("sem_destroy");
     }
 }

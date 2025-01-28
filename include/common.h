@@ -14,11 +14,11 @@
 #define KEY_SHARED_MEM 0x5678
 
 // Stałe konfuguracyjne dla symulacji
-#define MAX_PASSENGERS 30000
+#define MAX_PASSENGERS 100
 #define MAX_VIP_PASSENGERS 10
 #define MAX_WEIGHT 20
 #define MAX_SLOTS 3
-#define MAX_STAIR_CAPACITY 5
+#define MAX_STAIRS_CAPACITY 5
 
 // Struktura dla elementów kolejki
 struct passenger_entry {
@@ -36,6 +36,7 @@ typedef struct {
     bool terminateSimulation;
     int currentGender[MAX_SLOTS]; // -1: puste, 0: mężczyźni, 1: kobiety
     struct passenger_queue queue; // kolejka pasażerów FIFO
+    sem_t stairsSemaphore; // Semafor dla schodów
 } SharedData;
 
 // Prototypy operacji semaforowych

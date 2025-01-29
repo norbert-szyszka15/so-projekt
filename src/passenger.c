@@ -129,11 +129,11 @@ void passenger_process(int shmID, sem_t* semaphores, int passengerID) {
     sem_post(&sharedData->stairsSemaphore);
 
     shmdt(sharedData);
-    exit(0); // Upewnij się, że proces kończy się poprawnie
+    exit(0);
 }
 
 int verify_baggage(int weight, int isVip) {
-    int weight_limit = isVip ? 30 : 20; // wyższy limit bagażu dla VIPa
+    int weight_limit = isVip ? 30 : 20; // Wyższy limit bagażu dla VIPa
     if (weight > weight_limit) {
         printf("Pasażer: Bagaż o wadze %d kg przekracza limit %d kg.\n", weight, weight_limit);
         return 0;

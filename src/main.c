@@ -72,7 +72,7 @@ int main() {
         sleep(1);
     }
 
-    // Poczekaj na zakończenie wszystkich procesów
+    // Oczekianie na zakończenie wszystkich procesów potomnych
     int status;
     while (wait(&status) > 0);
 
@@ -88,7 +88,7 @@ void signal_handler(int sig) {
         printf("Zakończenie symulacji z powodu sygnału.\n");
         sharedData->terminateSimulation = true; // Ustawienie flagi w pamięci współdzielonej
 
-        // Send termination signal to all child processes
+        // Wysłanie sygnału zakończenia do wszystkich procesów potomnych
         kill(0, SIGTERM);
 
         // Poczekaj na zakończenie wszystkich procesów
@@ -144,7 +144,7 @@ void initialize_resources() {
         exit(1);
     }
 
-    // Utwórz kolejkę wiadomości
+    // Tworzenie kolejki wiadomości
     msgQueueID = msgget(KEY_MSG_QUEUE, IPC_CREAT | 0666);
     if (msgQueueID == -1) {
         perror("msgget");
@@ -156,7 +156,7 @@ void cleanup_resources(int shmID, SharedData* sharedDataArg) {
     // Odłączenie pamięci współdzielonej
     shmdt(sharedDataArg);
 
-    // Usuń pamięć współdzieloną
+    // Usuwanie pamięci współdzielonej
     if (shmctl(shmID, IPC_RMID, NULL) == -1) {
         perror("shmctl");
     } else {
@@ -173,7 +173,7 @@ void cleanup_resources(int shmID, SharedData* sharedDataArg) {
         perror("sem_destroy");
     }
 
-    // Usuń kolejkę wiadomości
+    // Usuwanie kolejki wiadomości
     int msgQueueID = msgget(KEY_MSG_QUEUE, 0666);
     if (msgQueueID != -1) {
         if (msgctl(msgQueueID, IPC_RMID, NULL) == -1) {

@@ -14,7 +14,7 @@ void captain_process(int shmID, sem_t* semaphores, int gateID) {
         exit(1);
     }
 
-    // Otwórz kolejkę wiadomości
+    // Otwieranie kolejki wiadomości
     int msgQueueID = msgget(KEY_MSG_QUEUE, 0666);
     if (msgQueueID == -1) {
         perror("msgget");
@@ -23,11 +23,11 @@ void captain_process(int shmID, sem_t* semaphores, int gateID) {
     }
 
     while (!sharedData->terminateSimulation) {
-        // Sprawdź, czy samolot jest pełny i wyślij prośbę o wcześniejszy odlot
+        // Sprawdzanie, czy samolot jest pełny
         if (sharedData->passengersInPlanes[gateID] >= PLANE_CAPACITY) {
             printf("Kapitan %d: samolot pełny, wysyłanie prośby o wcześniejszy odlot.\n", gateID + 1);
 
-            // Wyślij wiadomość do dyspozytora
+            // Wysyłanie wiadomości do dyspozytora
             Message msg;
             msg.mtype = gateID + 1; // Unikalny typ wiadomości dla każdej bramy
             msg.gateID = gateID;
@@ -55,7 +55,7 @@ void captain_process(int shmID, sem_t* semaphores, int gateID) {
 
             // Resetowanie liczby pasażerów na pokładzie
             sharedData->passengersInPlanes[gateID] = 0;
-            continue; // Pomiń okres oczekiwania i sprawdź nowych pasażerów
+            continue;
         }
 
         // Oczekiwanie na załadunek pasażerów
@@ -78,5 +78,5 @@ void captain_process(int shmID, sem_t* semaphores, int gateID) {
     }
 
     shmdt(sharedData);
-    exit(0); // Upewnij się, że proces kończy się poprawnie
+    exit(0);
 }

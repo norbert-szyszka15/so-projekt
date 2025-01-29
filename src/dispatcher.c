@@ -15,7 +15,7 @@ void dispatcher_process(int shmID, sem_t* semaphores) {
         exit(1);
     }
 
-    // Utwórz kolejkę wiadomości
+    // Tworzenie kolejki wiadomości
     int msgQueueID = msgget(KEY_MSG_QUEUE, IPC_CREAT | 0666);
     if (msgQueueID == -1) {
         perror("msgget");
@@ -27,7 +27,7 @@ void dispatcher_process(int shmID, sem_t* semaphores) {
         sleep(10);
         printf("Dyspozytor: sprawdzanie stanu samolotów.\n");
 
-        // Sprawdź, czy są jacyś pasażerowie czekający lub wchodzący na pokład
+        // Sprawdzanie, czy są pasażerowie w kolejce lub na pokładzie
         bool passengersWaiting = false;
         for (int i = 0; i < NUM_GATES; i++) {
             if (sharedData->passengersInQueue > 0 || sharedData->passengersInPlanes[i] > 0) {
@@ -40,7 +40,7 @@ void dispatcher_process(int shmID, sem_t* semaphores) {
             printf("Dyspozytor: brak pasażerów, kończenie symulacji.\n");
             sharedData->terminateSimulation = true;
 
-            // Wyślij sygnał zakończenia do wszystkich procesów potomnych
+            // Wysyłanie sygnałów do procesów pasażerów
             kill(0, SIGTERM);
         }
 
@@ -57,11 +57,11 @@ void dispatcher_process(int shmID, sem_t* semaphores) {
         }
     }
 
-    // Usuń kolejkę wiadomości
+    // Usuwanie kolejki wiadomości
     if (msgctl(msgQueueID, IPC_RMID, NULL) == -1) {
         perror("msgctl");
     }
 
     shmdt(sharedData);
-    exit(0); // Upewnij się, że proces kończy się poprawnie
+    exit(0);
 }

@@ -24,14 +24,12 @@
 #define NUM_GATES 10
 #define PLANE_CAPACITY 20
 
-// Struktura dla elementów kolejki
 struct passenger_entry {
     int passengerID;
     int frustrationLevel; // Poziom frustracji pasażera
     TAILQ_ENTRY(passenger_entry) entries;
 };
 
-// Struktura daych pamięci współdzielonej
 TAILQ_HEAD(passenger_queue, passenger_entry);
 
 typedef struct {

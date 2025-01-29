@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <semaphore.h>
+#include <signal.h>
 
 void dispatcher_process(int shmID, sem_t* semaphores) {
     SharedData* sharedData = (SharedData*)shmat(shmID, NULL, 0);
@@ -15,17 +16,24 @@ void dispatcher_process(int shmID, sem_t* semaphores) {
 
     while (!sharedData->terminateSimulation) {
         sleep(10);
-        printf("Dyspozytor: sygnał dla wcześniejszego odlotu samolotu.\n");
-        sharedData->terminateSimulation = true;
+        printf("Dyspozytor: sprawdzanie stanu samolotów.\n");
 
-        // Resetowanie symulacji
-        sharedData->passengersInQueue = 0;
-        sharedData->passengersOnStairs = 0;
-        sharedData->passengersInPlane = 0;
-        for (int i = 0; i < MAX_SLOTS; i++) {
-            sharedData->currentGender[i] = -1;
+        // Check if there are any passengers waiting or boarding
+        bool passengersWaiting = false;
+        for (int i = 0; i < NUM_GATES; i++) {
+            if (sharedData->passengersInQueue > 0 || sharedData->passengersInPlanes[i] > 0) {
+                passengersWaiting = true;
+                break;
+            }
         }
-        TAILQ_INIT(&sharedData->queue);
+
+        if (!passengersWaiting) {
+            printf("Dyspozytor: brak pasażerów, kończenie symulacji.\n");
+            sharedData->terminateSimulation = true;
+
+            // Send termination signal to all child processes
+            kill(0, SIGTERM);
+        }
     }
 
     shmdt(sharedData);

@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <semaphore.h>
 
-void captain_process(int shmID, sem_t* semaphores) {
+void captain_process(int shmID, sem_t* semaphores, int gateID) {
     SharedData* sharedData = (SharedData*)shmat(shmID, NULL, 0);
     if (sharedData == (void*)-1) {
         perror("shmat");
@@ -15,29 +15,21 @@ void captain_process(int shmID, sem_t* semaphores) {
 
     while (!sharedData->terminateSimulation) {
         // Oczekiwanie na załadunek pasażerów
-        sleep(5);
-        printf("Kapitan: samolot gotowy do startu.\n");
+        sleep(30 * (gateID + 1));
+        printf("Kapitan %d: samolot gotowy do startu.\n", gateID + 1);
 
         // Sprawdzenie, czy wszyscy pasażerowie są na pokładzie
-        if (sharedData->passengersInPlane > 0) {
-            printf("Kapitan: samolot startuje z %d pasażerami.\n", sharedData->passengersInPlane);
+        if (sharedData->passengersInPlanes[gateID] > 0) {
+            printf("Kapitan %d: samolot startuje z %d pasażerami.\n", gateID + 1, sharedData->passengersInPlanes[gateID]);
 
             // Lot i powrót
             sleep(3);
-            printf("Kapitan: samolot wylądował.\n");
+            printf("Kapitan %d: samolot wylądował.\n", gateID + 1);
 
             // Resetowanie liczby pasażerów na pokładzie
-            sharedData->passengersInPlane = 0;
-
-            // Resetowanie symulacji
-            sharedData->passengersInQueue = 0;
-            sharedData->passengersOnStairs = 0;
-            for (int i = 0; i < MAX_SLOTS; i++) {
-                sharedData->currentGender[i] = -1;
-            }
-            TAILQ_INIT(&sharedData->queue);
+            sharedData->passengersInPlanes[gateID] = 0;
         } else {
-            printf("Kapitan: brak pasażerów na pokładzie, odlot odroczony.\n");
+            printf("Kapitan %d: brak pasażerów na pokładzie, odlot odroczony.\n", gateID + 1);
         }
     }
 

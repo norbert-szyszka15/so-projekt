@@ -99,10 +99,27 @@ void passenger_process(int shmID, sem_t* semaphores, int passengerID) {
     // Simulate time on stairs
     sleep(1);
 
+    // Find the first available plane with capacity
+    int gateID = -1;
+    for (int i = 0; i < NUM_GATES; i++) {
+        if (sharedData->passengersInPlanes[i] < PLANE_CAPACITY) {
+            gateID = i;
+            break;
+        }
+    }
+
+    if (gateID == -1) {
+        printf("Pasażer %d: brak dostępnych samolotów. Opuścił lotnisko.\n", passengerID);
+        sharedData->passengersOnStairs--;
+        sem_post(&sharedData->stairsSemaphore);
+        shmdt(sharedData);
+        exit(0);
+    }
+
     // Enter the plane
     sharedData->passengersOnStairs--;
-    sharedData->passengersInPlane++;
-    printf("Pasażer %d: wchodzi do samolotu. Liczba pasażerów w samolocie: %d\n", passengerID, sharedData->passengersInPlane);
+    sharedData->passengersInPlanes[gateID]++;
+    printf("Pasażer %d: wchodzi do samolotu %d. Liczba pasażerów w samolocie: %d\n", passengerID, gateID + 1, sharedData->passengersInPlanes[gateID]);
 
     // Release stairs capacity
     sem_post(&sharedData->stairsSemaphore);

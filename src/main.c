@@ -38,11 +38,14 @@ int main() {
         usleep(100000); // 100 ms
     }
 
-    // Tworzenie procesu dla kapitana
-    pid_t captainPid = fork();
-    if (captainPid == 0) {
-        captain_process(shmID, semaphores);
-        exit(0);
+    // Tworzenie procesów dla kapitanów
+    pid_t captainPids[NUM_GATES];
+    for (int i = 0; i < NUM_GATES; i++) {
+        captainPids[i] = fork();
+        if (captainPids[i] == 0) {
+            captain_process(shmID, semaphores, i);
+            exit(0);
+        }
     }
 
     // Tworzenie procesu dla dyspozytora
@@ -56,6 +59,10 @@ int main() {
     while (!sharedData->terminateSimulation) {
         sleep(1);
     }
+
+    // Poczekaj na zakończenie wszystkich procesów
+    int status;
+    while (wait(&status) > 0);
 
     // Czyszczenie zasobów
     cleanup_resources(shmID, sharedData);
@@ -71,6 +78,10 @@ void signal_handler(int sig) {
 
         // Send termination signal to all child processes
         kill(0, SIGTERM);
+
+        // Poczekaj na zakończenie wszystkich procesów
+        int status;
+        while (wait(&status) > 0);
 
         cleanup_resources(shmID, sharedData);
         exit(0);
@@ -98,6 +109,9 @@ void initialize_resources() {
     for (int i = 0; i < MAX_SLOTS; i++) {
         sharedData->currentGender[i] = -1; // Stanowisko puste
     }
+    for (int i = 0; i < NUM_GATES; i++) {
+        sharedData->passengersInPlanes[i] = 0;
+    }
     TAILQ_INIT(&sharedData->queue);
 
     // Inicjalizacja semaforów
@@ -122,10 +136,6 @@ void initialize_resources() {
 void cleanup_resources(int shmID, SharedData* sharedDataArg) {
     // Odłączenie pamięci współdzielonej
     shmdt(sharedDataArg);
-
-    // Poczekaj na zakończenie wszystkich procesów
-    int status;
-    while (wait(&status) > 0);
 
     // Usuń pamięć współdzieloną
     if (shmctl(shmID, IPC_RMID, NULL) == -1) {

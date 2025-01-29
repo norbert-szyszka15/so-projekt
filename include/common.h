@@ -19,6 +19,8 @@
 #define MAX_WEIGHT 20
 #define MAX_SLOTS 3
 #define MAX_STAIRS_CAPACITY 5
+#define NUM_GATES 5
+#define PLANE_CAPACITY 20
 
 // Struktura dla elementów kolejki
 struct passenger_entry {
@@ -38,6 +40,7 @@ typedef struct {
     int currentGender[MAX_SLOTS]; // -1: puste, 0: mężczyźni, 1: kobiety
     struct passenger_queue queue; // kolejka pasażerów FIFO
     sem_t stairsSemaphore; // Semafor dla schodów
+    int passengersInPlanes[NUM_GATES]; // Liczba pasażerów w samolotach na każdym gate
 } SharedData;
 
 // Prototypy operacji semaforowych

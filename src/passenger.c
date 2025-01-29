@@ -28,7 +28,7 @@ void passenger_process(int shmID, sem_t* semaphores, int passengerID) {
     if (!verify_baggage(weight, isVip)) {
         printf("Pasażer %d: odprawa nieudana. Opuścił lotnisko.\n", passengerID);
         shmdt(sharedData);
-        exit(0); // Exit cleanly
+        exit(0); // Wyjście poprawne
     }
 
     // Wejście do kolejki między odprawą bagażową a kontrolą bezpieczeństwa
@@ -54,14 +54,14 @@ void passenger_process(int shmID, sem_t* semaphores, int passengerID) {
                 free(first_entry);
             }
         }
-        TAILQ_INSERT_HEAD(&sharedData->queue, new_entry, entries); // VIPs go to the front
+        TAILQ_INSERT_HEAD(&sharedData->queue, new_entry, entries); // VIPs idą na początek
     } else {
         TAILQ_INSERT_TAIL(&sharedData->queue, new_entry, entries);
     }
     printf("Pasażer %d: dodany do kolejki.\n", passengerID);
     sem_post(&semaphores[MAX_SLOTS]);
 
-    // Introduce a delay to allow multiple passengers to enter the queue
+    // Wprowadzenie opóźnienia, aby umożliwić wielu pasażerom wejście do kolejki
     sleep(2);
 
     // Czekanie w kolejce na swoją kolej
@@ -88,18 +88,18 @@ void passenger_process(int shmID, sem_t* semaphores, int passengerID) {
 
     if (sharedData->terminateSimulation) {
         shmdt(sharedData);
-        exit(0); // Exit cleanly if simulation is terminated
+        exit(0); // Wyjście poprawne, jeśli symulacja została zakończona
     }
 
-    // Wait for stairs capacity
+    // Czekanie na dostępność schodów
     sem_wait(&sharedData->stairsSemaphore);
     sharedData->passengersOnStairs++;
     printf("Pasażer %d: wchodzi na schody. Liczba pasażerów na schodach: %d\n", passengerID, sharedData->passengersOnStairs);
 
-    // Simulate time on stairs
+    // Symulacja czasu na schodach
     sleep(1);
 
-    // Find the first available plane with capacity
+    // Znalezienie pierwszego dostępnego samolotu z miejscem
     int gateID = -1;
     while (gateID == -1 && !sharedData->terminateSimulation) {
         for (int i = 0; i < NUM_GATES; i++) {
@@ -109,7 +109,7 @@ void passenger_process(int shmID, sem_t* semaphores, int passengerID) {
             }
         }
         if (gateID == -1) {
-            sleep(1); // Wait for a plane to become available
+            sleep(1); // Czekanie na dostępność samolotu
         }
     }
 
@@ -117,19 +117,19 @@ void passenger_process(int shmID, sem_t* semaphores, int passengerID) {
         sharedData->passengersOnStairs--;
         sem_post(&sharedData->stairsSemaphore);
         shmdt(sharedData);
-        exit(0); // Exit cleanly if simulation is terminated
+        exit(0); // Wyjście poprawne, jeśli symulacja została zakończona
     }
 
-    // Enter the plane
+    // Wejście do samolotu
     sharedData->passengersOnStairs--;
     sharedData->passengersInPlanes[gateID]++;
     printf("Pasażer %d: wchodzi do samolotu %d. Liczba pasażerów w samolocie: %d\n", passengerID, gateID + 1, sharedData->passengersInPlanes[gateID]);
 
-    // Release stairs capacity
+    // Zwolnienie dostępu do schodów
     sem_post(&sharedData->stairsSemaphore);
 
     shmdt(sharedData);
-    exit(0); // Ensure the process exits cleanly
+    exit(0); // Upewnij się, że proces kończy się poprawnie
 }
 
 int verify_baggage(int weight, int isVip) {

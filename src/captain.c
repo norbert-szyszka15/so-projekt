@@ -18,32 +18,35 @@ void captain_process(int shmID, sem_t* semaphores, int gateID) {
     int msgQueueID = msgget(KEY_MSG_QUEUE, 0666);
     if (msgQueueID == -1) {
         perror("msgget");
+        shmdt(sharedData);
         exit(1);
     }
 
     while (!sharedData->terminateSimulation) {
-        // Check if the plane is full and request early departure
+        // Sprawdź, czy samolot jest pełny i wyślij prośbę o wcześniejszy odlot
         if (sharedData->passengersInPlanes[gateID] >= PLANE_CAPACITY) {
             printf("Kapitan %d: samolot pełny, wysyłanie prośby o wcześniejszy odlot.\n", gateID + 1);
 
             // Wyślij wiadomość do dyspozytora
             Message msg;
-            msg.mtype = gateID + 1; // Unique message type for each gate
+            msg.mtype = gateID + 1; // Unikalny typ wiadomości dla każdej bramy
             msg.gateID = gateID;
             if (msgsnd(msgQueueID, &msg, sizeof(msg.gateID), 0) == -1) {
                 perror("msgsnd");
+                shmdt(sharedData);
                 exit(1);
             }
 
             // Oczekiwanie na zatwierdzenie
             printf("Kapitan %d: oczekiwanie na zatwierdzenie wcześniejszego odlotu.\n", gateID + 1);
-            if (msgrcv(msgQueueID, &msg, sizeof(msg.gateID), gateID + 1 + NUM_GATES, 0) == -1) { // Unique message type for approval
+            if (msgrcv(msgQueueID, &msg, sizeof(msg.gateID), gateID + 1 + NUM_GATES, 0) == -1) { // Unikalny typ wiadomości dla zatwierdzenia
                 perror("msgrcv");
+                shmdt(sharedData);
                 exit(1);
             }
             printf("Kapitan %d: wcześniejszy odlot zatwierdzony.\n", gateID + 1);
 
-            // Depart immediately after approval
+            // Odlot natychmiast po zatwierdzeniu
             printf("Kapitan %d: samolot startuje z %d pasażerami.\n", gateID + 1, sharedData->passengersInPlanes[gateID]);
 
             // Lot i powrót
@@ -52,7 +55,7 @@ void captain_process(int shmID, sem_t* semaphores, int gateID) {
 
             // Resetowanie liczby pasażerów na pokładzie
             sharedData->passengersInPlanes[gateID] = 0;
-            continue; // Skip the waiting period and check for new passengers
+            continue; // Pomiń okres oczekiwania i sprawdź nowych pasażerów
         }
 
         // Oczekiwanie na załadunek pasażerów
@@ -75,5 +78,5 @@ void captain_process(int shmID, sem_t* semaphores, int gateID) {
     }
 
     shmdt(sharedData);
-    exit(0); // Ensure the process exits cleanly
+    exit(0); // Upewnij się, że proces kończy się poprawnie
 }

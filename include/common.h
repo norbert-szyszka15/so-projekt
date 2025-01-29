@@ -16,12 +16,12 @@
 #define KEY_MSG_QUEUE 0x1234
 
 // Stałe konfuguracyjne dla symulacji
-#define MAX_PASSENGERS 100
+#define MAX_PASSENGERS 1000
 #define MAX_VIP_PASSENGERS 10
 #define MAX_WEIGHT 20
 #define MAX_SLOTS 3
 #define MAX_STAIRS_CAPACITY 5
-#define NUM_GATES 5
+#define NUM_GATES 10
 #define PLANE_CAPACITY 20
 
 // Struktura dla elementów kolejki

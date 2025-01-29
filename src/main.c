@@ -32,7 +32,10 @@ int main() {
     // Tworzenie procesów dla pasażerów
     for (int i = 0; i < MAX_PASSENGERS; i++) {
         pid_t pid = fork();
-        if (pid == 0) {
+        if (pid == -1) {
+            perror("fork passengers");
+            exit(1);
+        } else if (pid == 0) {
             passenger_process(shmID, semaphores, i + 1);
             exit(0);
         }
@@ -44,7 +47,11 @@ int main() {
     pid_t captainPids[NUM_GATES];
     for (int i = 0; i < NUM_GATES; i++) {
         captainPids[i] = fork();
-        if (captainPids[i] == 0) {
+        if (captainPids[i] == -1) {
+            perror("fork captains");
+            exit(1);
+        }
+        else if (captainPids[i] == 0) {
             captain_process(shmID, semaphores, i);
             exit(0);
         }
@@ -52,7 +59,11 @@ int main() {
 
     // Tworzenie procesu dla dyspozytora
     pid_t dispatcherPid = fork();
-    if (dispatcherPid == 0) {
+    if (dispatcherPid == -1) {
+        perror("fork dispatcher");
+        exit(1);
+    }
+    else if (dispatcherPid == 0) {
         dispatcher_process(shmID, semaphores);
         exit(0);
     }

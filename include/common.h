@@ -51,7 +51,7 @@ typedef struct {
     int gateID;
 } Message;
 
-// Prototypy operacji semaforowych
+
 int check_gender_and_set(int* currentGender, int slot, int gender);
 void reset_gender(int* currentGender, int slot);
 

@@ -39,7 +39,6 @@ int main() {
             passenger_process(shmID, semaphores, i + 1);
             exit(0);
         }
-        // Add a small delay between creating passenger processes
         usleep(100000); // 100 ms
     }
 

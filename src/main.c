@@ -68,6 +68,10 @@ void signal_handler(int sig) {
     if (sig == SIGINT) {
         printf("Zakończenie symulacji z powodu sygnału.\n");
         sharedData->terminateSimulation = true; // Ustawienie flagi w pamięci współdzielonej
+
+        // Send termination signal to all child processes
+        kill(0, SIGTERM);
+
         cleanup_resources(shmID, sharedData);
         exit(0);
     }

@@ -27,7 +27,8 @@ void passenger_process(int shmID, sem_t* semaphores, int passengerID) {
     int isVip = (passengerID % 2 == 0); // VIP co drugi pasażer
     if (!verify_baggage(weight, isVip)) {
         printf("Pasażer %d: odprawa nieudana. Opuścił lotnisko.\n", passengerID);
-        return; // Koniec procesu odrzuconego pasażera
+        shmdt(sharedData);
+        exit(0); // Exit cleanly
     }
 
     // Wejście do kolejki między odprawą bagażową a kontrolą bezpieczeństwa
@@ -36,6 +37,7 @@ void passenger_process(int shmID, sem_t* semaphores, int passengerID) {
     struct passenger_entry *new_entry = (struct passenger_entry *)malloc(sizeof(struct passenger_entry));
     if (new_entry == NULL) {
         perror("malloc");
+        shmdt(sharedData);
         exit(1);
     }
     new_entry->passengerID = passengerID;
@@ -64,7 +66,7 @@ void passenger_process(int shmID, sem_t* semaphores, int passengerID) {
 
     // Czekanie w kolejce na swoją kolej
     int inQueue = 1; // flaga, czy pasażer jest w kolejce
-    while (inQueue) {
+    while (inQueue && !sharedData->terminateSimulation) {
         sem_wait(&semaphores[MAX_SLOTS]); // Dostęp do kolejki
         struct passenger_entry *entry;
         TAILQ_FOREACH(entry, &sharedData->queue, entries) {
@@ -84,6 +86,11 @@ void passenger_process(int shmID, sem_t* semaphores, int passengerID) {
         }
     }
 
+    if (sharedData->terminateSimulation) {
+        shmdt(sharedData);
+        exit(0); // Exit cleanly if simulation is terminated
+    }
+
     // Wait for stairs capacity
     sem_wait(&sharedData->stairsSemaphore);
     sharedData->passengersOnStairs++;
@@ -101,6 +108,7 @@ void passenger_process(int shmID, sem_t* semaphores, int passengerID) {
     sem_post(&sharedData->stairsSemaphore);
 
     shmdt(sharedData);
+    exit(0); // Ensure the process exits cleanly
 }
 
 int verify_baggage(int weight, int isVip) {

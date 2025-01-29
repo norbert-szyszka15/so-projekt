@@ -42,4 +42,5 @@ void captain_process(int shmID, sem_t* semaphores) {
     }
 
     shmdt(sharedData);
+    exit(0); // Ensure the process exits cleanly
 }

@@ -45,9 +45,9 @@ void dispatcher_process(int shmID, sem_t* semaphores) {
 
         // Handle premature departure request
         Message msg;
-        if (msgrcv(msgQueueID, &msg, sizeof(msg.gateID), 1, IPC_NOWAIT) != -1) {
+        if (msgrcv(msgQueueID, &msg, sizeof(msg.gateID), 0, IPC_NOWAIT) != -1) {
             printf("Dyspozytor: zatwierdzanie wcześniejszego odlotu dla bramy %d.\n", msg.gateID + 1);
-            msg.mtype = msg.gateID + 1;
+            msg.mtype = msg.gateID + 1 + NUM_GATES; // Unique message type for approval
             if (msgsnd(msgQueueID, &msg, sizeof(msg.gateID), 0) == -1) {
                 perror("msgsnd");
                 exit(1);

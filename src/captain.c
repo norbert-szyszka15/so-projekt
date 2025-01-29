@@ -28,7 +28,7 @@ void captain_process(int shmID, sem_t* semaphores, int gateID) {
 
             // Wyślij wiadomość do dyspozytora
             Message msg;
-            msg.mtype = 1;
+            msg.mtype = gateID + 1; // Unique message type for each gate
             msg.gateID = gateID;
             if (msgsnd(msgQueueID, &msg, sizeof(msg.gateID), 0) == -1) {
                 perror("msgsnd");
@@ -36,11 +36,23 @@ void captain_process(int shmID, sem_t* semaphores, int gateID) {
             }
 
             // Oczekiwanie na zatwierdzenie
-            if (msgrcv(msgQueueID, &msg, sizeof(msg.gateID), gateID + 1, 0) == -1) {
+            printf("Kapitan %d: oczekiwanie na zatwierdzenie wcześniejszego odlotu.\n", gateID + 1);
+            if (msgrcv(msgQueueID, &msg, sizeof(msg.gateID), gateID + 1 + NUM_GATES, 0) == -1) { // Unique message type for approval
                 perror("msgrcv");
                 exit(1);
             }
             printf("Kapitan %d: wcześniejszy odlot zatwierdzony.\n", gateID + 1);
+
+            // Depart immediately after approval
+            printf("Kapitan %d: samolot startuje z %d pasażerami.\n", gateID + 1, sharedData->passengersInPlanes[gateID]);
+
+            // Lot i powrót
+            sleep(3);
+            printf("Kapitan %d: samolot wylądował.\n", gateID + 1);
+
+            // Resetowanie liczby pasażerów na pokładzie
+            sharedData->passengersInPlanes[gateID] = 0;
+            continue; // Skip the waiting period and check for new passengers
         }
 
         // Oczekiwanie na załadunek pasażerów

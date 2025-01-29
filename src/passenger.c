@@ -101,19 +101,23 @@ void passenger_process(int shmID, sem_t* semaphores, int passengerID) {
 
     // Find the first available plane with capacity
     int gateID = -1;
-    for (int i = 0; i < NUM_GATES; i++) {
-        if (sharedData->passengersInPlanes[i] < PLANE_CAPACITY) {
-            gateID = i;
-            break;
+    while (gateID == -1 && !sharedData->terminateSimulation) {
+        for (int i = 0; i < NUM_GATES; i++) {
+            if (sharedData->passengersInPlanes[i] < PLANE_CAPACITY) {
+                gateID = i;
+                break;
+            }
+        }
+        if (gateID == -1) {
+            sleep(1); // Wait for a plane to become available
         }
     }
 
-    if (gateID == -1) {
-        printf("Pasażer %d: brak dostępnych samolotów. Opuścił lotnisko.\n", passengerID);
+    if (sharedData->terminateSimulation) {
         sharedData->passengersOnStairs--;
         sem_post(&sharedData->stairsSemaphore);
         shmdt(sharedData);
-        exit(0);
+        exit(0); // Exit cleanly if simulation is terminated
     }
 
     // Enter the plane

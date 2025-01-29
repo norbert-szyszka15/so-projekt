@@ -11,10 +11,12 @@
 #include <unistd.h>
 #include <signal.h>
 #include <semaphore.h>
+#include <sys/msg.h>
 
 int shmID;
 SharedData* sharedData;
 sem_t semaphores[MAX_SLOTS + 1];
+int msgQueueID;
 
 void signal_handler(int sig);
 void initialize_resources();
@@ -131,6 +133,13 @@ void initialize_resources() {
         perror("sem_init (kolejka)");
         exit(1);
     }
+
+    // Utwórz kolejkę wiadomości
+    msgQueueID = msgget(KEY_MSG_QUEUE, IPC_CREAT | 0666);
+    if (msgQueueID == -1) {
+        perror("msgget");
+        exit(1);
+    }
 }
 
 void cleanup_resources(int shmID, SharedData* sharedDataArg) {
@@ -152,5 +161,13 @@ void cleanup_resources(int shmID, SharedData* sharedDataArg) {
     }
     if (sem_destroy(&sharedDataArg->stairsSemaphore) == -1) {
         perror("sem_destroy");
+    }
+
+    // Usuń kolejkę wiadomości
+    int msgQueueID = msgget(KEY_MSG_QUEUE, 0666);
+    if (msgQueueID != -1) {
+        if (msgctl(msgQueueID, IPC_RMID, NULL) == -1) {
+            perror("msgctl");
+        }
     }
 }

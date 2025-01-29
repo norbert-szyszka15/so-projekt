@@ -6,11 +6,19 @@
 #include <stdlib.h>
 #include <semaphore.h>
 #include <signal.h>
+#include <sys/msg.h>
 
 void dispatcher_process(int shmID, sem_t* semaphores) {
     SharedData* sharedData = (SharedData*)shmat(shmID, NULL, 0);
     if (sharedData == (void*)-1) {
         perror("shmat");
+        exit(1);
+    }
+
+    // Utwórz kolejkę wiadomości
+    int msgQueueID = msgget(KEY_MSG_QUEUE, IPC_CREAT | 0666);
+    if (msgQueueID == -1) {
+        perror("msgget");
         exit(1);
     }
 
@@ -34,6 +42,22 @@ void dispatcher_process(int shmID, sem_t* semaphores) {
             // Send termination signal to all child processes
             kill(0, SIGTERM);
         }
+
+        // Handle premature departure request
+        Message msg;
+        if (msgrcv(msgQueueID, &msg, sizeof(msg.gateID), 1, IPC_NOWAIT) != -1) {
+            printf("Dyspozytor: zatwierdzanie wcześniejszego odlotu dla bramy %d.\n", msg.gateID + 1);
+            msg.mtype = msg.gateID + 1;
+            if (msgsnd(msgQueueID, &msg, sizeof(msg.gateID), 0) == -1) {
+                perror("msgsnd");
+                exit(1);
+            }
+        }
+    }
+
+    // Usuń kolejkę wiadomości
+    if (msgctl(msgQueueID, IPC_RMID, NULL) == -1) {
+        perror("msgctl");
     }
 
     shmdt(sharedData);

@@ -9,9 +9,11 @@
 #include <stdbool.h>
 #include <semaphore.h>
 #include <sys/queue.h>
+#include <sys/msg.h>
 
 // Klucze IPC
 #define KEY_SHARED_MEM 0x5678
+#define KEY_MSG_QUEUE 0x1234
 
 // Stałe konfuguracyjne dla symulacji
 #define MAX_PASSENGERS 100
@@ -42,6 +44,12 @@ typedef struct {
     sem_t stairsSemaphore; // Semafor dla schodów
     int passengersInPlanes[NUM_GATES]; // Liczba pasażerów w samolotach na każdym gate
 } SharedData;
+
+// Struktura wiadomości
+typedef struct {
+    long mtype;
+    int gateID;
+} Message;
 
 // Prototypy operacji semaforowych
 int check_gender_and_set(int* currentGender, int slot, int gender);

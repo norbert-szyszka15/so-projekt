@@ -32,7 +32,7 @@
 - Dołącza do pamięci współdzielonej i losuje wagę i płeć dla pasażera.
 - Symuluje kontrolę bagażu, a następnie dodaje pasażera do kolejki na kontrolę bezpieczeństwa.
 - Czeka w kolejce, przechodzi kontrolę bezpieczeństwa i czeka na dostęp do schodów.
-- Znajduje pierwszy samolot z wolnym miejsciem i wchodzi na pokład, jeżeli ma dostęp do schodów.
+- Znajduje pierwszy samolot z wolnym miejscem i wchodzi na pokład, jeżeli ma dostęp do schodów.
 - Aktualizuje pamięć współdzieloną i zwalnia wykorzystywane przez siebie zasoby.
 
 ### `verify_baggage(int weight, int isVip)`:
@@ -50,8 +50,8 @@
 - Reprezentuje proces dyspozytora zarządzającego lotniskiem.
 - Dołącza do pamięci współdzielonej i tworzy kolejkę komunikatów.
 - Przez cały czas sprawdza stan samolotów i pasażerów.
-- Obługuje prośby o wcześniejszy odlot wysyłane przez kapitanówi i zatwierdza je.
-- Jeżeli żadni pasżerowie nie czekają na odlot, kończy symulację.
+- Obsługuje prośby o wcześniejszy odlot wysyłane przez kapitanów i zatwierdza je.
+- Jeżeli żadni pasażerowie nie czekają na odlot, kończy symulację.
 
 
 
@@ -80,7 +80,7 @@
 - Ustawia flagę zakończenia symulacji w pamięci współdzielonej i wysyła sygnał zakończenia do wszystkich procesów potomnych.
 - Czeka na zakończenie procesów potomnych i czyści zasoby.
 
-### `initialize_resources()`
+### `initialize_resources()`:
 
 - Inicjalizuje pamięć współdzieloną, semafory oraz kolejkę komunikatów.
 - Ustawia określone wartości początkowe w pamięci współdzielonej.

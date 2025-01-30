@@ -9,4 +9,4 @@ Program trwa znacząco dłużej względem poprzedniego przypadku, oczekiwanie w 
 Symulacja w „najnormalniejszym” ze swoich stanów – pasażerowie przechodzą odprawę i czekają na samoloty, które w stosunkowo „średnim” tempie są obsługiwane przez kapitanów i dyspozytora. Symulacja ponownie kończy się po przewiezieniu wszystkich pasażerów.
 
 ### Test nr #4 - użycie komendy `pkill airplane`.
-Symulacja kończy się natychmiast, pamięć zostaje zwolniona i semafory zostają zniszczone (nie dochodzi do błędu semaforów). Żaden proces nie zotaje procesem zombie, wszystkie procesy kończą się nominalnie.
+Symulacja kończy się natychmiast, pamięć zostaje zwolniona i semafory zostają zniszczone (nie dochodzi do błędu semaforów). Żaden proces nie zostaje procesem zombie, wszystkie procesy kończą się nominalnie.
